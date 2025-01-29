@@ -1,1 +1,1 @@
-pip freeze > requirements.txt
+python-telegram-bot==20.0
