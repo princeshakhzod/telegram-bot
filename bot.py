@@ -52,7 +52,7 @@ async def button(update: Update, context):
     elif query.data in ['Toshkent_driver', 'Samarqand_driver', 'Buxoro_driver']:
         # Haydovchi uchun manzilni tanlash
         driver_data[user_id] = {'category': 'driver', 'destination': query.data}
-        await query.edit_message_text(text=f"Manzil: {query.data}. Telefon raqamingizni kiriting:")
+        await query.edit_message_text(text=f"Manzil: {query.data}.")
 
 # Telefon raqamni olish
 async def get_phone(update: Update, context):
@@ -69,11 +69,12 @@ async def get_phone(update: Update, context):
         for driver_id, driver_info in driver_data.items():
             if driver_info['destination'] == destination:
                 driver_phone = passenger_data[user_id]['phone']
+                # Faqat haydovchiga telefon raqamini yuborish
                 await update.message.reply_text(f"Haydovchi uchun telefon raqami: {driver_phone}")
-    
-    # Haydovchi uchun telefon raqamini saqlash
+
+    # Haydovchi uchun telefon raqamini saqlash (bu yerda raqam so'ralmaydi)
     if user_id in driver_data:
-        driver_data[user_id]['phone'] = phone
+        driver_data[user_id]['phone'] = phone  # Haydovchi telefon raqami faqat saqlanadi
         await update.message.reply_text(f'Sizning telefon raqamingiz saqlandi: {phone}')
         
         # Manzilga qarab, yo'lovchiga telefon raqamini yuborish
@@ -81,6 +82,7 @@ async def get_phone(update: Update, context):
         for passenger_id, passenger_info in passenger_data.items():
             if passenger_info['destination'] == destination:
                 passenger_phone = driver_data[user_id]['phone']
+                # Faqat yo'lovchiga telefon raqamini yuborish
                 await update.message.reply_text(f"Yo'lovchi uchun telefon raqami: {passenger_phone}")
 
 # Botni ishga tushirish
