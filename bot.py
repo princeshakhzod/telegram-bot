@@ -103,7 +103,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(button))
     application.add_handler(CallbackQueryHandler(destination_button))
-    application.add_handler(MessageHandler(filters.Filters.text & ~filters.Filters.command, phone_handler))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, phone_handler))
 
     application.run_polling()
 
