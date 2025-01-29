@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 
 # Botning tokeni
 TOKEN = '7484845792:AAHnvpREXZ5xaLEkTpEOMM22wAPlpmnulLI'
@@ -62,7 +62,7 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, phone_handler))
+    dp.add_handler(MessageHandler(Filters.text & ~filters.command, phone_handler))
     dp.add_handler(CallbackQueryHandler(button))
     dp.add_handler(CommandHandler("driver", driver_start))
 
