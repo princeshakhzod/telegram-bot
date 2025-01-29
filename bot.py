@@ -1,5 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
+from telegram import Update
 
 # Botning tokeni
 TOKEN = '7484845792:AAHnvpREXZ5xaLEkTpEOMM22wAPlpmnulLI'
@@ -8,7 +9,7 @@ TOKEN = '7484845792:AAHnvpREXZ5xaLEkTpEOMM22wAPlpmnulLI'
 passenger_data = {}
 
 # Tugmalarni yaratish
-def start(update, context):
+async def start(update: Update, context):
     keyboard = [
         [InlineKeyboardButton("Toshkent", callback_data='Toshkent')],
         [InlineKeyboardButton("Samarqand", callback_data='Samarqand')],
@@ -16,25 +17,25 @@ def start(update, context):
         [InlineKeyboardButton("Telefon raqamingizni kiriting", callback_data='get_phone')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Iltimos, manzilni tanlang:', reply_markup=reply_markup)
+    await update.message.reply_text('Iltimos, manzilni tanlang:', reply_markup=reply_markup)
 
 # Telefon raqamni olish
-def get_phone(update, context):
-    update.message.reply_text('Telefon raqamingizni kiriting (masalan, +998XXXXXXXXX):')
+async def get_phone(update: Update, context):
+    await update.message.reply_text('Telefon raqamingizni kiriting (masalan, +998XXXXXXXXX):')
 
 # Telefon raqamini saqlash
-def phone_handler(update, context):
+async def phone_handler(update: Update, context):
     phone = update.message.text
     user_id = update.message.from_user.id
     if user_id not in passenger_data:
         passenger_data[user_id] = {}
     passenger_data[user_id]['phone'] = phone
-    update.message.reply_text(f'Sizning telefon raqamingiz saqlandi: {phone}')
+    await update.message.reply_text(f'Sizning telefon raqamingiz saqlandi: {phone}')
 
 # Manzilni tanlash
-def button(update, context):
+async def button(update: Update, context):
     query = update.callback_query
-    query.answer()
+    await query.answer()
     user_id = query.from_user.id
     
     # Manzilni tanlash
@@ -42,32 +43,33 @@ def button(update, context):
         if user_id not in passenger_data:
             passenger_data[user_id] = {}
         passenger_data[user_id]['destination'] = query.data
-        query.edit_message_text(text=f"Manzil: {query.data}. Telefon raqamingizni kiriting:")
+        await query.edit_message_text(text=f"Manzil: {query.data}. Telefon raqamingizni kiriting:")
     elif query.data == 'get_phone':
-        query.edit_message_text(text="Telefon raqamingizni kiriting:")
+        await query.edit_message_text(text="Telefon raqamingizni kiriting:")
 
 # Taksi haydovchisi uchun manzilni so'rash
-def driver_start(update, context):
+async def driver_start(update: Update, context):
     keyboard = [
         [InlineKeyboardButton("Toshkent", callback_data='Toshkent')],
         [InlineKeyboardButton("Samarqand", callback_data='Samarqand')],
         [InlineKeyboardButton("Buxoro", callback_data='Buxoro')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Haydovchi sifatida manzilni tanlang:', reply_markup=reply_markup)
+    await update.message.reply_text('Haydovchi sifatida manzilni tanlang:', reply_markup=reply_markup)
 
 # Botni ishga tushirish
 def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+    # Application yaratish
+    application = Application.builder().token(TOKEN).build()
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~filters.command, phone_handler))
-    dp.add_handler(CallbackQueryHandler(button))
-    dp.add_handler(CommandHandler("driver", driver_start))
+    # Handlerlarni qo'shish
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, phone_handler))
+    application.add_handler(CallbackQueryHandler(button))
+    application.add_handler(CommandHandler("driver", driver_start))
 
-    updater.start_polling()
-    updater.idle()
+    # Botni ishga tushirish
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
