@@ -7,66 +7,90 @@ TOKEN = '7484845792:AAHnvpREXZ5xaLEkTpEOMM22wAPlpmnulLI'
 
 # Yo'lovchilar va haydovchilar ma'lumotlarini saqlash uchun lug'at
 passenger_data = {}
+driver_data = {}
 
 # Tugmalarni yaratish
 async def start(update: Update, context):
     keyboard = [
-        [InlineKeyboardButton("Toshkent", callback_data='Toshkent')],
-        [InlineKeyboardButton("Samarqand", callback_data='Samarqand')],
-        [InlineKeyboardButton("Buxoro", callback_data='Buxoro')],
-        [InlineKeyboardButton("Telefon raqamingizni kiriting", callback_data='get_phone')]
+        [InlineKeyboardButton("Yo'lovchi", callback_data='passenger')],
+        [InlineKeyboardButton("Haydovchi", callback_data='driver')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('Iltimos, manzilni tanlang:', reply_markup=reply_markup)
+    await update.message.reply_text('Siz haydovchimisiz yoki Yo\'lovchi?', reply_markup=reply_markup)
 
-# Telefon raqamni olish
-async def get_phone(update: Update, context):
-    await update.message.reply_text('Telefon raqamingizni kiriting (masalan, +998XXXXXXXXX):')
-
-# Telefon raqamini saqlash
-async def phone_handler(update: Update, context):
-    phone = update.message.text
-    user_id = update.message.from_user.id
-    if user_id not in passenger_data:
-        passenger_data[user_id] = {}
-    passenger_data[user_id]['phone'] = phone
-    await update.message.reply_text(f'Sizning telefon raqamingiz saqlandi: {phone}')
-
-# Manzilni tanlash
+# Yo'lovchi yoki Haydovchi tanlanganda
 async def button(update: Update, context):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
     
-    # Manzilni tanlash
-    if query.data in ['Toshkent', 'Samarqand', 'Buxoro']:
-        if user_id not in passenger_data:
-            passenger_data[user_id] = {}
-        passenger_data[user_id]['destination'] = query.data
-        await query.edit_message_text(text=f"Manzil: {query.data}. Telefon raqamingizni kiriting:")
-    elif query.data == 'get_phone':
-        await query.edit_message_text(text="Telefon raqamingizni kiriting:")
+    if query.data == 'passenger':
+        # Yo'lovchi bo'lsa, manzilni tanlash
+        keyboard = [
+            [InlineKeyboardButton("Toshkent", callback_data='Toshkent')],
+            [InlineKeyboardButton("Samarqand", callback_data='Samarqand')],
+            [InlineKeyboardButton("Buxoro", callback_data='Buxoro')]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text="Qayerga borasiz?", reply_markup=reply_markup)
 
-# Taksi haydovchisi uchun manzilni so'rash
-async def driver_start(update: Update, context):
-    keyboard = [
-        [InlineKeyboardButton("Toshkent", callback_data='Toshkent')],
-        [InlineKeyboardButton("Samarqand", callback_data='Samarqand')],
-        [InlineKeyboardButton("Buxoro", callback_data='Buxoro')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('Haydovchi sifatida manzilni tanlang:', reply_markup=reply_markup)
+    elif query.data == 'driver':
+        # Haydovchi bo'lsa, manzilni tanlash
+        keyboard = [
+            [InlineKeyboardButton("Toshkent", callback_data='Toshkent_driver')],
+            [InlineKeyboardButton("Samarqand", callback_data='Samarqand_driver')],
+            [InlineKeyboardButton("Buxoro", callback_data='Buxoro_driver')]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text="Qayerga borasiz?", reply_markup=reply_markup)
+
+    elif query.data in ['Toshkent', 'Samarqand', 'Buxoro']:
+        # Yo'lovchi uchun manzilni tanlash
+        passenger_data[user_id] = {'category': 'passenger', 'destination': query.data}
+        await query.edit_message_text(text=f"Manzil: {query.data}. Telefon raqamingizni kiriting:")
+
+    elif query.data in ['Toshkent_driver', 'Samarqand_driver', 'Buxoro_driver']:
+        # Haydovchi uchun manzilni tanlash
+        driver_data[user_id] = {'category': 'driver', 'destination': query.data}
+        await query.edit_message_text(text=f"Manzil: {query.data}. Telefon raqamingizni kiriting:")
+
+# Telefon raqamni olish
+async def get_phone(update: Update, context):
+    phone = update.message.text
+    user_id = update.message.from_user.id
+
+    # Yo'lovchi uchun telefon raqamini saqlash
+    if user_id in passenger_data:
+        passenger_data[user_id]['phone'] = phone
+        await update.message.reply_text(f'Sizning telefon raqamingiz saqlandi: {phone}')
+        
+        # Manzilga qarab, haydovchiga telefon raqamini yuborish
+        destination = passenger_data[user_id]['destination']
+        for driver_id, driver_info in driver_data.items():
+            if driver_info['destination'] == destination:
+                driver_phone = passenger_data[user_id]['phone']
+                await update.message.reply_text(f"Haydovchi uchun telefon raqami: {driver_phone}")
+    
+    # Haydovchi uchun telefon raqamini saqlash
+    if user_id in driver_data:
+        driver_data[user_id]['phone'] = phone
+        await update.message.reply_text(f'Sizning telefon raqamingiz saqlandi: {phone}')
+        
+        # Manzilga qarab, yo'lovchiga telefon raqamini yuborish
+        destination = driver_data[user_id]['destination']
+        for passenger_id, passenger_info in passenger_data.items():
+            if passenger_info['destination'] == destination:
+                passenger_phone = driver_data[user_id]['phone']
+                await update.message.reply_text(f"Yo'lovchi uchun telefon raqami: {passenger_phone}")
 
 # Botni ishga tushirish
 def main():
-    # Application yaratish
     application = Application.builder().token(TOKEN).build()
 
     # Handlerlarni qo'shish
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, phone_handler))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone))
     application.add_handler(CallbackQueryHandler(button))
-    application.add_handler(CommandHandler("driver", driver_start))
 
     # Botni ishga tushirish
     application.run_polling()
